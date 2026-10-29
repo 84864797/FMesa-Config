@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=FMesa Config
+Name[zh_CN]=FMesa 配置工具
+Comment=LinuxCNC configuration wizard for Mesa and Smart Serial boards
+Comment[zh_CN]=Mesa 与智能串口板 LinuxCNC 配置向导
+Exec=fmesa-config
+Icon=fmesa-config
+Terminal=false
+Categories=Development;Engineering;
+StartupNotify=true
