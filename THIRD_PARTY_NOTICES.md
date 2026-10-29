@@ -24,9 +24,7 @@ Qt shared libraries are in the portable directory's `_internal/` tree and can
 be replaced with compatible versions. Build instructions and source are provided
 with each release; the application does not use static Qt linking.
 
-Included STM32 SD firmware/source comes from the accompanying
-firmware/mesa-v3/SD-Mesa-Firmware-Source.zip. Its newly written Rust code is MIT;
-retain its included LICENSE and all dependency notices. It is a separate
-experimental firmware project, not a prerequisite for configuring LinuxCNC.
-Its license is copied to packaging/licenses/FIRMWARE-MIT.txt. Boot firmware is
-not automatically installed by the desktop application or Debian package.
+No STM32 firmware images, upgrade packages, firmware manifest, or firmware
+source archives are distributed with this repository or its application bundles.
+The desktop maintenance client accepts separately supplied packages. Any such
+package remains subject to its provider's licensing and compatibility terms.

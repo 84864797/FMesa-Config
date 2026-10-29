@@ -2,7 +2,9 @@
 
 面向 **Debian 12 / LinuxCNC** 的独立配置向导。为 F7I92、Mesa 以太网主卡及 SD01/SD02 智能串口板生成 LinuxCNC INI/HAL；界面与生成规则参考 PNCconf，板卡选择和 SD 配置由本项目提供。
 
-[English](README_EN.md) · [详细使用](docs/USER_GUIDE.md) · [源码运行与打包](docs/BUILD.md) · [添加板卡](docs/DEVELOPMENT.md) · [固件说明](docs/FIRMWARE.md)
+[English](README_EN.md) · [详细使用](docs/USER_GUIDE.md) · [源码运行与打包](docs/BUILD.md) · [添加板卡](docs/DEVELOPMENT.md) · [固件说明](docs/FIRMWARE.md) · [Probe Basic](docs/PROBE_BASIC.md)
+
+**本仓库和安装包只发布配置工具，不包含固件 BIN、FWUP、固件源码 ZIP 或 manifest。升级包需另行提供。**
 
 **当前版本属于测试发布。** 已做本机 Debian 12 的软件测试与安装包自检；不代表所有固件、接线或机床均完成硬件验证。它不会安装或替换 LinuxCNC 的 HM2 驱动。
 
@@ -52,7 +54,7 @@ bash run.sh
 
 ## 第一次使用
 
-1. 新建工程，设置名称、机床轴布局，选择 AXIS、Gmoccapy、QtDragon 或 QtDragon HD。
+1. 新建工程，设置名称、机床轴布局，选择 AXIS、Gmoccapy、QtDragon、QtDragon HD 或 Probe Basic。Probe Basic 需要另装前端和选择其官方配套模板，见专门说明。
 2. 硬件页选择 **F7I92** 或自定义板卡，填写 IP；读取与实际安装固件一致的板卡信息。
 3. 轴页填写脉冲当量、速度、加速度、行程与回零参数。新轴脉冲当量默认为 0，必须填写后才能导出。界面速度单位为每分钟，INI 使用每秒。
 4. 输入输出页分配主卡 GPIO；启用 SD 后，在本页的 SD 页签配置，不弹出独立窗口。没有启用的 SD 板不会生成从板 IO 连接。
@@ -93,4 +95,4 @@ QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -p 'test_*.py' -
 
 ## 许可证
 
-桌面工具 GPL-2.0-or-later；随附 Rust 固件项目保留其 MIT 及第三方声明。见 [LICENSE](LICENSE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。LinuxCNC/PNCconf 原版权和许可声明保留。
+桌面工具 GPL-2.0-or-later；本仓库和安装包不包含固件或固件源码。见 [LICENSE](LICENSE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。LinuxCNC/PNCconf 原版权和许可声明保留。

@@ -2,6 +2,10 @@
 import re
 
 TEXT = {
+ 'Probe Basic模板目录':'Probe Basic template directory',
+ '选择Probe Basic官方模板目录':'Select the official Probe Basic template directory',
+ '请选择升级包；发行版不包含固件':'Select an upgrade package; firmware is not included',
+ '请选择匹配目标型号的升级包；发行版不包含固件。':'Select a package matching the target model; firmware is not included.',
  '已停机并退出LinuxCNC，允许进入Mesa维护模式':'Machine stopped; LinuxCNC closed. Allow Mesa maintenance takeover.',
  '正式链路：以太网 → Mesa → Smart Serial → SD板。需要配套Mesa版Boot V3；原USB Boot V2不支持转发。请在Debian电脑退出LinuxCNC后操作。':'Update route: Ethernet → Mesa → Smart Serial → SD board. Requires matching Mesa Boot V3; USB Boot V2 cannot forward updates. Run on Debian with LinuxCNC stopped.',
  '升级目标Mesa IP':'Update target Mesa IP',

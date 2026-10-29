@@ -25,7 +25,7 @@ bash scripts/build.sh
 
 脚本创建独立 `.build-venv`，安装 `requirements-build.txt`，生成源码压缩包、包含 Python/Qt 的运行包、`.deb`、构建依赖版本记录和 SHA256 校验。首次构建需要联网下载 PyPI 依赖。全部输出位于 `dist/`，中间文件位于 `build/`；不会安装到系统，也不会执行 `sudo`。
 
-自检会实例化 Qt 界面、生成示例 INI/HAL、解析两个 `.fwup` 包；不连接串口、Mesa、HAL 或 LinuxCNC。构建失败会立即停止，不生成成功报告。
+自检会实例化 Qt 界面、生成示例 INI/HAL、用不可执行的合成数据检查升级包解析器；不连接串口、Mesa、HAL 或 LinuxCNC。构建失败会立即停止，不生成成功报告。
 
 仅生成源码包，不下载依赖：
 
@@ -64,4 +64,4 @@ QT_QPA_PLATFORM=offscreen .build-venv/bin/python -m unittest discover -p 'test_*
 
 ## 发布内容
 
-`scripts/release_manifest.py` 使用明确的白名单，排除 `.venv`、个人 LinuxCNC 配置、开发日志、调试 ELF 和缓存。代码、构建说明、测试、固件源代码 ZIP、BIN/FWUP 及许可证会包含在源码包中。发布前仍应检查清单，确认没有私密文件或凭据。
+`scripts/release_manifest.py` 使用明确的白名单，排除 `.venv`、个人 LinuxCNC 配置、开发日志、调试 ELF 和缓存。源码包只包含配置工具代码、构建说明、测试及许可证；不包含任何固件、固件 manifest 或固件源码。发布前仍应检查清单，确认没有私密文件或凭据。

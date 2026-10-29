@@ -96,8 +96,8 @@ class Window(QMainWindow):
             if suffix.isdigit() and 0<=int(suffix)<8:self.up_channel.setValue(int(suffix))
 
     def upgrade_model_changed(self,model):
-        if hasattr(self,'package') and Path(self.package.text()).name in ('sd01-mesa-v5.fwup','sd02-mesa-v5.fwup'):
-            self.package.setText(str(Path(__file__).resolve().parent/'firmware/mesa-v3'/(model.lower()+'-mesa-v5.fwup')))
+        self.package.clear()
+        if hasattr(self,'package_info'):self.package_info.setText('请选择匹配目标型号的升级包；发行版不包含固件。')
 
     def status(self,text):self.statusBar().showMessage(self.tr_text(text))
 
@@ -159,8 +159,22 @@ class Window(QMainWindow):
         removed=self.hardware_form.takeRow(self.display_box)
         if removed.labelItem:removed.labelItem.widget().hide();removed.labelItem.widget().deleteLater()
         form=QFormLayout();form.addRow('LinuxCNC 操作界面',self.display_box);l.addLayout(form)
-        text=QLabel('AXIS：经典界面。\nGmoccapy：适合触摸操作。\nQtDragon / QtDragon HD：QtVCP界面，当前模板支持XYZ、XYZA。\n目标电脑需要安装所选界面；相关换刀连接会随配置生成。')
+        self.pb_template=QLineEdit();self.pb_template.setPlaceholderText('自动查找已安装的官方machine_setup_files目录')
+        self.pb_row=QWidget();pb_layout=QHBoxLayout(self.pb_row);pb_layout.setContentsMargins(0,0,0,0)
+        pb_layout.addWidget(self.pb_template);pb_layout.addWidget(button('浏览…',self.choose_pb_template))
+        form.addRow('Probe Basic模板目录',self.pb_row);self.pb_label=form.labelForField(self.pb_row)
+        self.display_box.currentIndexChanged.connect(self.update_display_options)
+        self.update_display_options()
+        text=QLabel('AXIS：经典界面。\nGmoccapy：适合触摸操作。\nQtDragon / QtDragon HD：QtVCP界面，当前模板支持XYZ、XYZA。\nProbe Basic：QtPyVCP界面；使用官方配套模板，当前生成手动换刀配置。\n目标电脑需要安装所选界面；相关换刀连接会随配置生成。')
         text.setWordWrap(True);l.addWidget(text);l.addStretch()
+
+    def update_display_options(self,_=None):
+        visible=self.display_box.currentData()=='probe_basic'
+        self.pb_row.setVisible(visible);self.pb_label.setVisible(visible)
+
+    def choose_pb_template(self):
+        path=QFileDialog.getExistingDirectory(self,self.tr_text('选择Probe Basic官方模板目录'))
+        if path:self.pb_template.setText(path)
 
     def welcome_page(self):
         l=self.page('欢迎','FMesa 机床配置向导')
@@ -495,7 +509,7 @@ class Window(QMainWindow):
         self.up_ip=QLineEdit(self.c['ip']);form.addRow('升级目标Mesa IP',self.up_ip)
         self.up_channel=number(0,True,0,7);form.addRow('Smart Serial通道 / 端口0',self.up_channel)
         self.up_model=QComboBox();self.up_model.addItems(['SD01','SD02']);form.addRow('目标型号',self.up_model)
-        self.package=QLineEdit(str(Path(__file__).resolve().parent/'firmware/mesa-v3/sd01-mesa-v5.fwup'));form.addRow('升级包',self.package)
+        self.package=QLineEdit();self.package.setPlaceholderText('请选择升级包；发行版不包含固件');form.addRow('升级包',self.package)
         self.up_model.currentTextChanged.connect(self.upgrade_model_changed)
         self.machine_stopped=QCheckBox('已停机并退出LinuxCNC，允许进入Mesa维护模式');l.addWidget(self.machine_stopped)
         row=QHBoxLayout();row.addWidget(button('读取Mesa链路信息',self.probe_mesa));row.addWidget(button('选择并检查升级包',self.choose_package))
@@ -517,6 +531,8 @@ class Window(QMainWindow):
             if isinstance(w,QComboBox):w.setCurrentText(str(self.c[k]))
             elif isinstance(w,QSpinBox):w.setValue(self.c[k])
             else:w.setText(str(self.c[k]))
+        self.pb_template.setText(self.c.get('probe_basic_template',''))
+        self.update_display_options()
         self.pdm_frequency.setValue(self.c.get('pdm_frequency',6000000))
         self.dpll_timer.setValue(self.c.get('dpll_timer_us',-50))
         self.control_mode.setCurrentIndex(self.control_mode.findData(self.c.get('stepgen_control','position')))
@@ -601,6 +617,7 @@ class Window(QMainWindow):
         c['pdm_frequency']=self.pdm_frequency.value()
         c['stepgen_control']=self.control_mode.currentData()
         c['display']=self.display_box.currentData()
+        c['probe_basic_template']=self.pb_template.text().strip()
         c['remote_enabled']=self.remote_enabled.isChecked()
         c['mpg']={'enabled':self.mpg_enabled.isChecked(),'axes':self.mpg_axes.currentData(),'input29':{'role':self.mpg_input29.currentData() or '','invert':self.mpg_input29_invert.isChecked()}}
         c['mesa_gpio']=self.collect_gpio()
@@ -722,7 +739,9 @@ class Window(QMainWindow):
         try:
             import firmware_update,mesa_update
             if not self.machine_stopped.isChecked():raise ValueError('请先停止机器并退出LinuxCNC，再勾选维护接管确认')
-            path=self.package.text();address=self.up_ip.text().strip();channel=self.up_channel.value();model=self.up_model.currentText()
+            path=self.package.text().strip()
+            if not path:raise ValueError('请先选择升级包；发行版不包含固件')
+            address=self.up_ip.text().strip();channel=self.up_channel.value();model=self.up_model.currentText()
             firmware_update.inspect(path)
             self.start_job(lambda emit:mesa_update.deploy(path,address,channel,model,emit),lambda result:self.log(json.dumps(result,ensure_ascii=False)),self.up_log.appendPlainText)
             self.upgrading=True;self.flash.setEnabled(False)

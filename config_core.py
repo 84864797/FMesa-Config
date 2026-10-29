@@ -7,6 +7,7 @@ from pathlib import Path
 from io_config import input_targets, input_assignments, gpio_reason
 from board_profiles import profile_for,effective_gpio,default_discovery,PROFILES,fixed_rule_errors
 import spindle_config
+import probe_basic_config
 from display_config import repair_ini
 from hostmot2_config import serial_option,dpll_settings
 
@@ -14,7 +15,7 @@ from hostmot2_config import serial_option,dpll_settings
 MPG_RESERVED = {20:'倍率sel1',21:'Z选轴',22:'轴选3 / A',23:'Y选轴',
                 24:'轴选4 / B',25:'X选轴',28:'倍率sel0'}
 MPG_GPIO_INPUTS = {20,21,22,23,24,25,28,29}
-DISPLAYS = {'axis':'AXIS', 'gmoccapy':'Gmoccapy', 'qtdragon':'QtDragon', 'qtdragon_hd':'QtDragon HD'}
+DISPLAYS = {'axis':'AXIS', 'gmoccapy':'Gmoccapy', 'qtdragon':'QtDragon', 'qtdragon_hd':'QtDragon HD', 'probe_basic':'Probe Basic (QtPyVCP)'}
 
 
 def axis_defaults(letter, index):
@@ -32,7 +33,7 @@ def axis_defaults(letter, index):
 
 def defaults():
     c = {
-        'schema': 1, 'language': 'zh', 'display':'axis', 'name': 'SD_Mill', 'board': '7i92', 'board_profile':'F7I92', 'ip': '10.10.10.10',
+        'schema': 1, 'language': 'zh', 'display':'axis', 'probe_basic_template':'', 'name': 'SD_Mill', 'board': '7i92', 'board_profile':'F7I92', 'ip': '10.10.10.10',
         'host': 'hm2_7i92.0', 'servo_ns': 1000000, 'watchdog_ns': 5000000, 'stepgen_control':'velocity_pid',
         'stepgens': 5, 'pwmgens': 1, 'encoders': 1, 'pdm_frequency':6000000, 'dpll_timer_us':-50,
         'remote_model': 'SD01', 'remote_prefix': 'hm2_7i92.0.sd01.0.0', 'remote_enabled': False,
@@ -82,6 +83,7 @@ def validate(c):
     errors.extend(fixed_rule_errors(c))
     display=c.get('display','axis')
     if display not in DISPLAYS:errors.append('未知LinuxCNC操作界面')
+    if display=='probe_basic':errors.extend(probe_basic_config.validate(c))
     if display in ('qtdragon','qtdragon_hd') and ''.join(a['axis'] for a in c['axes']) not in ('XYZ','XYZA'):
         errors.append('当前QtDragon模板支持XYZ或XYZA，请为其他轴布局选择AXIS或Gmoccapy')
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,47}', c['name']):
@@ -260,7 +262,7 @@ TOOL_TABLE = tool.tbl
 '''
     if any(target.startswith('halui.') for _,_,role in input_assignments(c) for target in input_targets(role,len(axes))):
         ini=ini.replace('[HAL]\n','[HAL]\nHALUI = halui\n')
-    if display!='axis':
+    if display not in ('axis','probe_basic'):
         ini=ini.replace('[HAL]\n','[HAL]\nPOSTGUI_HALFILE = postgui.hal\n')
         preference=f'WORKINGFOLDER/{display}.pref' if display.startswith('qtdragon') else 'gmoccapy_preferences'
         ini=ini.replace('[DISPLAY]\n',f'[DISPLAY]\nPREFERENCE_FILE_PATH = {preference}\nPROGRAM_PREFIX = .\nINCREMENTS = 5mm 1mm .5mm .1mm .05mm .01mm .005mm\n')
@@ -387,6 +389,7 @@ TOOL_TABLE = tool.tbl
     files = {c['name']+'.ini':ini, 'machine.hal':'\n'.join(hal)+'\n', 'custom.hal':'# 用户扩展HAL\n', 'tool.tbl':'T1 P1 Z0 ; Default tool\n',
              'project.json':json.dumps(c,ensure_ascii=False,indent=2)+'\n', 'CHECKS.txt':'\n'.join(warnings)+'\n'}
     if display!='axis':files['postgui.hal']='\n'.join(tool_lines)+'\n'
+    if display=='probe_basic':files=probe_basic_config.apply(c,files)
     if c.get('language')=='en':
         from i18n import translate
         files={name:(content if name=='project.json' else translate(content,'en')) for name,content in files.items()}
@@ -397,6 +400,21 @@ def export(c, destination):
     files = generate(c)
     path = Path(destination)
     if path.exists(): raise FileExistsError('请选择新目录，避免覆盖手工修改的配置')
+    if c.get('display')=='probe_basic':
+        source=probe_basic_config.template_dir(c).resolve()
+        if path.resolve().is_relative_to(source):raise ValueError('导出目录不能位于Probe Basic模板目录内')
+        import tempfile,shutil
+        path.parent.mkdir(parents=True,exist_ok=True)
+        stage=Path(tempfile.mkdtemp(prefix='.fmesa-pb-',dir=path.parent))
+        try:
+            probe_basic_config.copy_assets(c,stage)
+            for name,content in files.items():(stage/name).write_text(content,encoding='utf-8')
+            if path.exists():raise FileExistsError('导出目录已存在')
+            stage.rename(path)
+        except Exception:
+            shutil.rmtree(stage,ignore_errors=True)
+            raise
+        return path
     path.mkdir(parents=True)
     for name, content in files.items(): (path/name).write_text(content,encoding='utf-8')
     return path

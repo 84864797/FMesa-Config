@@ -13,7 +13,8 @@ board or launch LinuxCNC automatically.
 
 1. **Machine information:** enter a project name, axis layout and servo period.
    Linear axes use mm; rotary axes use degrees.
-2. **Frontend:** choose AXIS, Gmoccapy, QtDragon or QtDragon HD. The target machine
+2. **Frontend:** choose AXIS, Gmoccapy, QtDragon, QtDragon HD or Probe Basic.
+   Probe Basic needs its installed official template; see [PB setup](PROBE_BASIC_EN.md). The target machine
    must have the chosen LinuxCNC frontend installed. QtDragon templates currently
    support XYZ or XYZA only.
 3. **Hardware discovery:** select F7I92 or a custom board, enter the board IP, and

@@ -1,10 +1,12 @@
 # FMesa Config
 
-[中文](README.md) · [User guide](docs/USER_GUIDE_EN.md) · [Build instructions](docs/BUILD_EN.md) · [Development](docs/DEVELOPMENT_EN.md) · [Firmware](docs/FIRMWARE_EN.md)
+[中文](README.md) · [User guide](docs/USER_GUIDE_EN.md) · [Build instructions](docs/BUILD_EN.md) · [Development](docs/DEVELOPMENT_EN.md) · [Firmware](docs/FIRMWARE_EN.md) · [Probe Basic](docs/PROBE_BASIC_EN.md)
 
 Independent LinuxCNC configuration wizard for Debian 12, Mesa Ethernet boards,
 F7I92 profiles and SD01/SD02 Smart Serial expansion boards. The UI and generation
 rules follow PNCconf; this is its own application, not an embedded PNCconf UI.
+
+**This repository and its application packages do not include firmware BIN, FWUP, firmware source ZIP or manifest. Supply upgrade packages separately.**
 
 This is a **test release**. Local software tests and package self-tests do not
 constitute hardware acceptance for every machine, wiring arrangement or firmware.
@@ -45,7 +47,7 @@ See [BUILD_EN.md](docs/BUILD_EN.md) for dependencies, offline behavior and rebui
 
 ## Use
 
-Create a project, select frontend and board, read the firmware resources, set
+Create a project, select frontend (including Probe Basic) and board, read the firmware resources, set
 axis mechanics/homing, assign IO and optional SD IO, configure the spindle/MPG,
 preview the generated files, and export to a **new** directory. Open its INI
 with LinuxCNC. Initial axis pulse scales are zero and must be configured.
@@ -72,5 +74,6 @@ PNCconf reference tests require its installed source and are skipped otherwise.
 Optional HAL monitoring uses LinuxCNC's **system** Python and `python3-tk`:
 `fmesa-monitor` for a Debian install, or `bash run_monitor.sh` from source.
 
-Desktop code: GPL-2.0-or-later. Firmware source: its own MIT notices and dependency
-licenses. See LICENSE and THIRD_PARTY_NOTICES.md.
+Desktop code: GPL-2.0-or-later. Firmware and firmware source are not distributed. See LICENSE and THIRD_PARTY_NOTICES.md.
+
+Probe Basic requires its own installation and matching official machine template. See [PB setup](docs/PROBE_BASIC_EN.md); FMesa generates the manual-toolchange mill profile and copies its installed supporting assets.

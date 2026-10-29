@@ -48,7 +48,7 @@ This creates `.build-venv` from requirements-build.txt and produces in `dist/`:
 
 Intermediate files are in `build/`. The script does not install the output on
 the host. Any failed subprocess stops the build. A software self-test checks Qt
-startup, configuration generation and firmware-package parsing, with no board,
+startup, configuration generation and package parsing using non-executable synthetic data, with no board,
 serial, HAL or LinuxCNC connection.
 
 Only package source, without downloading Python dependencies:
@@ -87,6 +87,6 @@ its build or Release has succeeded: check the actual run result.
 ## Publish list
 
 `scripts/release_manifest.py` explicitly selects source, tests, documentation,
-packaging scripts and supplied firmware/source files. It excludes workstation
+packaging scripts and license notices. Firmware images, packages, manifests and firmware source archives are excluded. It excludes workstation
 configs, virtual environments, caches, debug ELF and runtime logs. Review that
 list before publishing. Do not include credentials or private machine settings.

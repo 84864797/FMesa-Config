@@ -16,6 +16,15 @@ class UITest(unittest.TestCase):
 
     def test_default_form_roundtrip(self):self.assertEqual(self.w.collect(),defaults())
 
+    def test_probe_basic_option_and_template_path_roundtrip(self):
+        self.w.display_box.setCurrentIndex(self.w.display_box.findData('probe_basic'))
+        self.w.pb_template.setText('/example/machine_setup_files')
+        c=self.w.collect()
+        self.assertEqual(c['display'],'probe_basic')
+        self.assertEqual(c['probe_basic_template'],'/example/machine_setup_files')
+        self.w.c=c;self.w.populate()
+        self.assertEqual(self.w.display_box.currentData(),'probe_basic')
+
 
     def test_pwm_polarity_and_dpll_controls_roundtrip(self):
         self.w.pwm_invert.setChecked(True)
@@ -239,8 +248,15 @@ class UITest(unittest.TestCase):
         self.w.hw['remote_prefix'].setText('hm2_7i92.0.sd02.0.2')
         self.w.nav.setCurrentRow(6)
         self.assertEqual(self.w.up_ip.text(),'10.10.10.20');self.assertEqual(self.w.up_channel.value(),2)
-        self.assertTrue(self.w.package.text().endswith('sd02-mesa-v5.fwup'))
+        self.assertEqual(self.w.package.text(),'')
         self.assertFalse(hasattr(self.w,'port'))
+
+    def test_upgrade_without_package_never_starts_hardware_job(self):
+        from unittest.mock import patch
+        self.w.machine_stopped.setChecked(True)
+        with patch.object(self.w,'error') as error,patch.object(self.w,'start_job') as job:
+            self.w.upgrade();job.assert_not_called()
+            self.assertIn('请先选择升级包',error.call_args.args[0])
 
     def test_upgrade_requires_maintenance_takeover(self):
         from unittest.mock import patch

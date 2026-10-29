@@ -1,26 +1,27 @@
-# Firmware and maintenance
+# Upgrade packages are supplied separately
 
 [中文](FIRMWARE.md)
 
-Configuring LinuxCNC does not require reflashing Mesa or SD firmware. Installing
-the desktop package and running its self-test never flashes a board.
+This repository and all public application packages **exclude firmware BIN,
+FWUP, firmware source ZIP and firmware manifests**. Local development copies,
+if present, are excluded by both the publish list and packaging scripts.
 
-`firmware/mesa-v3/` contains the supplied SD01/SD02 test images, packages, manifest
-and `SD-Mesa-Firmware-Source.zip`. The ZIP contains its Rust workspace, toolchain
-configuration and MIT notice; dependencies retain their own licenses. Follow that
-workspace's build files for firmware builds. Building the desktop distribution
-does not compile firmware.
+LinuxCNC configuration does not require reflashing a board. The desktop
+maintenance client remains available, but users must obtain compatible upgrade
+packages separately from a trusted provider and check board, boot and application
+versions. The application does not download or flash firmware automatically.
 
-- `.fwup`: application upgrade package with header/checksum.
-- `.bin`: raw MCU image; boot and application images use different addresses and
-  must not be interchanged.
-- `manifest.json`: model, sizes, hashes and build-stage record. Software/model
-  testing is not equivalent to field flashing or electrical verification.
+The upgrade page starts with no file selected. Changing the target model clears
+the previous package selection. With no package selected, upgrade is rejected
+before a hardware job starts.
 
-Close LinuxCNC/HAL ownership before maintenance, select the matching board and
-package, and establish a recovery procedure. Boot maintenance and normal
-application communication are different stages. A successful main-card read,
-checksum or maintenance handshake does not prove the complete IO application.
-The bundled `.fwup` is a selectable default, not an automatic installation.
+- `.fwup`: an application package the maintenance client can inspect.
+- `.bin`: a raw MCU image, not interchangeable with `.fwup`; application installation
+  does not program it.
 
-Report both main-card FPGA and remote boot/application versions when debugging.
+Close LinuxCNC/HAL board ownership before maintenance, verify the model and package,
+and establish recovery procedures. Main-card discovery, checksum or maintenance
+handshake success is not full field acceptance of the IO application.
+
+The software self-test uses non-executable synthetic data to check package parsing.
+It requires no real firmware files and accesses no hardware.

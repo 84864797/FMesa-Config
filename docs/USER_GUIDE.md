@@ -9,7 +9,7 @@
 ## 配置顺序
 
 1. **基本信息**：工程名、XYZ/XYZA/XYZAB 等轴布局与伺服周期。线性轴单位为 mm，旋转轴为 degree。
-2. **操作界面**：AXIS、Gmoccapy、QtDragon/HD。目标 LinuxCNC 电脑需安装对应界面。QtDragon 模板目前限 XYZ/XYZA。
+2. **操作界面**：AXIS、Gmoccapy、QtDragon/HD、Probe Basic。Probe Basic 需另行安装并选择官方模板，详见 [PB说明](PROBE_BASIC.md)。目标 LinuxCNC 电脑需安装对应界面。QtDragon 模板目前限 XYZ/XYZA。
 3. **硬件发现**：选择 F7I92 或自定义，填写板卡 IP。自定义板卡须读取固件资源后分配功能。发现的是固件可用通道，不是强制新增机床轴。
 4. **轴**：设置 StepGen 通道、每单位脉冲数、速度、加速度、行程、回零偏置与搜索/锁存速度。脉冲数不能为 0，各轴不能重复占同一 StepGen。
 5. **输入输出**：主卡页和自定义引脚页分配 GPIO。启用 SD 后在同一页签组出现从板配置；输入可选反向。不要把固件占用的 StepGen/PWM/编码器引脚另设为普通 GPIO。

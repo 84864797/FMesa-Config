@@ -1,0 +1,53 @@
+name: Build Debian 12 release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: debian:12
+    steps:
+      - name: Install native build dependencies
+        run: |
+          apt-get update
+          apt-get install -y ca-certificates git python3 python3-venv python3-pip binutils patchelf dpkg-dev build-essential libglib2.0-0 libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 fonts-noto-cjk
+      - uses: actions/checkout@v4
+      - name: Build portable bundle and Debian package
+        run: bash scripts/build.sh
+      - name: Run software tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: .build-venv/bin/python -m unittest discover -p 'test_*.py' -q
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fmesa-config-debian12-amd64
+          path: dist/*
+          if-no-files-found: error
+  release:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: fmesa-config-debian12-amd64
+          path: dist
+      - name: Publish test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="$(sed -n 's/^Version: //p' dist/BUILD-INFO.txt | head -1)"
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; bump VERSION to publish new assets."
+            exit 0
+          fi
+          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "FMesa Config $tag" --prerelease --notes "Debian 12 amd64 test release. Includes source, portable runtime, Debian package, build info and SHA256SUMS. Software self-tests do not replace hardware validation. Application only; no board firmware or firmware source is included. See Chinese and English README/docs for installation and use."

@@ -1,5 +1,6 @@
 """Packaged entry point; self-test never opens a hardware connection."""
 import os
+import struct
 import sys
 from pathlib import Path
 
@@ -11,8 +12,8 @@ def main():
         from PySide6.QtWidgets import QApplication
         from app import Window,setup_fonts
         from config_core import defaults,generate
-        from firmware_update import inspect
-        from hostmot2_config import serial_option
+        import firmware_update
+        from f407_update import package,unpack
         app=QApplication([]);setup_fonts();window=Window()
         c=window.collect()
         assert c==defaults()
@@ -21,9 +22,9 @@ def main():
         generated=generate(c);hal=generated['machine.hal']
         assert 'gpio.001.invert_output TRUE' in hal
         assert 'sserial_port_0=' not in hal
-        for board in ('sd01','sd02'):
-            inspect(Path(__file__).resolve().parent/'firmware/mesa-v3'/f'{board}-mesa-v5.fwup')
-        window.close();print('Self-test passed: Qt GUI, config generation, firmware parsing; no hardware access.');return 0
+        synthetic=struct.pack('<II',0x2001fff0,0x08020009)+b'FMesa synthetic parser test data; not a working program'
+        _,payload=unpack(package(synthetic,1,1));assert payload==synthetic
+        window.close();print('Self-test passed: Qt GUI, config generation, package parser (synthetic data); no hardware access.');return 0
     if '--cli' in sys.argv:
         sys.argv.remove('--cli')
         from cli import main as cli_main

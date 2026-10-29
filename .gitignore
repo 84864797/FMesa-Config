@@ -9,3 +9,10 @@ test-results/
 *.log
 *.pid
 .DS_Store
+
+# Firmware is private and is not part of this public distribution.
+firmware/
+*.fwup
+*.bin
+*.elf
+packaging/licenses/FIRMWARE-MIT.txt
