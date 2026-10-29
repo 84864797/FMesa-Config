@@ -45,8 +45,9 @@ def main():
         installed_size=sum(p.stat().st_size for p in stage.rglob('*') if p.is_file() and not p.is_symlink())//1024
         dependencies='libc6 (>= 2.36), libstdc++6, libgcc-s1, zlib1g, libglib2.0-0, libgl1, libegl1, libdbus-1-3, libfontconfig1, libfreetype6, libx11-6, libx11-xcb1, libxcb1, libxcb-cursor0, libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, libxcb-shape0, libxcb-sync1, libxcb-xfixes0, libxcb-xinerama0, libxcb-xkb1, libxkbcommon0, libxkbcommon-x11-0, procps, fonts-noto-cjk'
         (control/'control').write_text(f'Package: fmesa-config\nVersion: {deb_version}\nArchitecture: {arch}\nMaintainer: FMesa Config contributors <84864797@users.noreply.github.com>\nSection: electronics\nPriority: optional\nInstalled-Size: {installed_size}\nDepends: {dependencies}\nRecommends: mesaflash, python3-tk\nHomepage: https://github.com/84864797/FMesa-Config\nDescription: Mesa and Smart Serial LinuxCNC configuration wizard\n Own desktop wizard with F7I92 board profiles and INI/HAL generation.\n Includes its Python and Qt runtime; LinuxCNC and mesaflash remain external.\n')
-        run('dpkg-deb','--root-owner-group','-Zxz','-z3','--threads-max=2','--build',str(stage),str(out/f'fmesa-config_{deb_version}_{arch}.deb'))
+        run('dpkg-deb','--root-owner-group','-Zxz','-z3','--threads-max=2','--build',str(stage),str(out/f'fmesa-config_{version}_{arch}.deb'))
         (out/'BUILD-INFO.txt').write_text(info)
+        shutil.copy2(ROOT/'packaging/RELEASE_NOTES.md',out/'RELEASE_NOTES.md')
     assets=[p for p in out.iterdir() if p.is_file() and p.name!='SHA256SUMS']
     (out/'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in sorted(assets)))
     print('Release assets:',out)

@@ -50,4 +50,7 @@ jobs:
             echo "Release $tag already exists; bump VERSION to publish new assets."
             exit 0
           fi
-          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "FMesa Config $tag" --prerelease --notes "Debian 12 amd64 test release. Includes source, portable runtime, Debian package, build info and SHA256SUMS. Software self-tests do not replace hardware validation. Application only; no board firmware or firmware source is included. See Chinese and English README/docs for installation and use."
+          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "FMesa Config $tag" --prerelease --notes-file dist/RELEASE_NOTES.md
+          if [ "$version" = "0.2.0-test.2" ] && gh release view v0.2.0-test.1 >/dev/null 2>&1; then
+            gh release edit v0.2.0-test.1 --notes "此早期测试版存在下载文件名与校验清单不一致的问题，请使用 v0.2.0-test.2 或更新版本。This preview has an asset-filename/checksum-list mismatch; use v0.2.0-test.2 or later."
+          fi
