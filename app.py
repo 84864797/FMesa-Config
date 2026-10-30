@@ -384,7 +384,8 @@ class Window(QMainWindow):
     def show_custom_axis(self,channel):
         self.nav.setCurrentRow(1)
         for i in range(self.axis_table.rowCount()):
-            if int(self.axis_table.item(i,self.axis_keys.index('stepgen')).text())==channel:
+            extra=json.loads(self.axis_table.item(i,self.axis_keys.index('advanced')).text())
+            if int(self.axis_table.item(i,self.axis_keys.index('stepgen')).text())==channel or extra.get('tandem_enabled') and extra.get('tandem_stepgen')==channel:
                 self.axis_tabs.setCurrentIndex(i);break
         self.status(f'请在轴页选择要使用StepGen {channel}的轴；不会自动增加轴或修改已有绑定。')
 

@@ -269,7 +269,8 @@ EMCIO = io
 CYCLE_TIME = 0.100
 TOOL_TABLE = tool.tbl
 '''
-    ini=ini.replace('[DISPLAY]\n',f'[DISPLAY]\nGEOMETRY = {coord.lower()}\n')
+    display_geometry=''.join(a['axis'] for a in c['axes']).lower()
+    ini=ini.replace('[DISPLAY]\n',f'[DISPLAY]\nGEOMETRY = {display_geometry}\n')
     if coord=='XZ':ini=ini.replace('[DISPLAY]\n','[DISPLAY]\nLATHE = 1\n')
     if display=='axis':
         ini=ini.replace('[DISPLAY]\n','[DISPLAY]\nPROGRAM_PREFIX = ~/linuxcnc/nc_files\nINCREMENTS = 5mm 1mm .5mm .1mm .05mm .01mm .005mm\n')

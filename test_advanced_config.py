@@ -63,6 +63,7 @@ class AdvancedTest(unittest.TestCase):
         ini,files=self.ini(c)
         self.assertEqual(ini['KINS']['JOINTS'],'4');self.assertIn('XYYZ',ini['KINS']['KINEMATICS'])
         self.assertIn('kinstype=BOTH',ini['KINS']['KINEMATICS'])
+        self.assertEqual(ini['DISPLAY']['GEOMETRY'],'xyz')
         self.assertEqual(ini['JOINT_1']['HOME_SEQUENCE'],ini['JOINT_2']['HOME_SEQUENCE'])
         self.assertLess(int(ini['JOINT_2']['HOME_SEQUENCE']),0)
         self.assertEqual(float(ini['JOINT_2']['STEP_SCALE']),-400)

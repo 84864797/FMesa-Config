@@ -23,7 +23,7 @@
 
 ```bash
 sudo apt update
-sudo apt install ./fmesa-config_0.3.0-test.1_amd64.deb
+sudo apt install ./fmesa-config_0.3.0-test.2_amd64.deb
 fmesa-config
 ```
 

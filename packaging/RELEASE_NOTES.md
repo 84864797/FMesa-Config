@@ -1,4 +1,4 @@
-## FMesa 配置工具 0.3.0-test.1
+## FMesa 配置工具 0.3.0-test.2
 
 - 补齐公制启动代码、点动步距、车床标志、TRAJ速度、HAL扩展入口和Gmoccapy指示连接。
 - 新增反向间隙/补偿表、编码器索引回零、Step/Dir双驱、PWM模拟伺服轴与PID。
@@ -9,7 +9,7 @@
 
 已完成软件组合测试及离线自检，未启动LinuxCNC或进行机床运动、伺服整定与实机验收。高级功能需按硬件接线和机械参数调试。
 
-## FMesa Config 0.3.0-test.1
+## FMesa Config 0.3.0-test.2
 
 - Completes metric startup code, jog increments, lathe flag, trajectory speeds, custom HAL hooks and Gmoccapy indicators.
 - Adds backlash/compensation tables, encoder-index homing, Step/Dir tandem joints and PWM servo axes with PID.
