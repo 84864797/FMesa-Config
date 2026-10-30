@@ -88,3 +88,13 @@ Installed package: `fmesa-monitor`. Source: `bash run_monitor.sh`. This needs
 LinuxCNC's system Python `hal` module and `python3-tk`, not the bundled Python.
 It observes HAL values and does not write them. Monitoring is separate from
 firmware maintenance.
+
+## 0.3 advanced machine settings (test release)
+
+- Basic information: require homing, restore joint position, individual homing, tool-change policies (spindle on, quill up, random pockets), MDI commands, editor, image/Python filters. Defaults still require homing and do not restore saved positions.
+- Axis feedback/compensation/tandem tab: Step/Dir or PWM analog servo, dedicated encoder and index homing, PID gains, backlash OR compensation table, and secondary motor StepGen/scale/switch offset. Compensation files are copied into exported configurations.
+- Tandem joints are numbered in coordinate order, such as X,Y,second Y,Z. Existing IO assignments retain their motor identity when tandem numbering changes; recheck all joint-number assignments. Each motor requires a separate home input. Negative HOME_SEQUENCE values synchronize homing; trivkins uses kinstype=BOTH. The secondary Step/Dir motor inherits velocity, timing and PID from the primary; its step scale and switch offset are independent.
+- PWM servo axes require an available PWM channel, dedicated encoder, output scale, explicit PID gains and maximum output. F7I92 reserves its fixed PWM0 for the spindle; analog axes therefore require a suitable custom board.
+- Spindle encoder/PID tab: counts per revolution, closed-loop speed control, PID and at-speed tolerance. Use quadrature counts, not the encoder nameplate line count. No encoder may be shared with MPG/axes. Feedback disabled preserves open-loop behavior. With feedback enabled, actual encoder velocity/position/index connect to speed-in/revs/index-enable; Step/Dir PID output is converted from RPM to rev/s. Synchronized machining additionally requires physical index wiring and suitable hardware; generated connections are not tapping acceptance tests.
+- Index homing requires an index pin and a home switch. Backlash/compensation increases StepGen velocity and acceleration headroom to 2x, following PNCconf.
+- Defaults/generation were compared against installed LinuxCNC 2.9 PNCconf source and tested offline. No machine motion, loop tuning or live startup was performed. Advanced settings require hardware-specific commissioning. Probe Basic remains an official-template manual-toolchange profile; ATC and spindle orientation are not generated.

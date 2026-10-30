@@ -59,6 +59,8 @@ def apply(c,files):
         PARAMETER_FILE='probe_basic.var',OWORD_NARGS=1,NO_DOWNCASE_OWORD=1,
         SUBROUTINE_PATH='subroutines',ON_ABORT_COMMAND='O<on_abort> CALL'))
     text=set_ini(text,'HAL',dict(HALUI='halui',POSTGUI_HALFILE='probe_basic_postgui.hal',TWOPASS='on'))
+    text=text.replace('POSTGUI_HALFILE = probe_basic_postgui.hal\n',
+                      'POSTGUI_HALFILE = probe_basic_postgui.hal\nPOSTGUI_HALFILE = custom_postgui.hal\n')
     text=set_ini(text,'TRAJ',dict(AXES=len(c['axes'])))
     files[name]=text;files.pop('postgui.hal',None)
     files['machine.hal']=files['machine.hal'].replace('num_spindles=1 num_dio=16','num_spindles=1 num_dio=16 num_aio=3')

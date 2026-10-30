@@ -23,7 +23,7 @@
 
 ```bash
 sudo apt update
-sudo apt install ./fmesa-config_0.2.0-test.2_amd64.deb
+sudo apt install ./fmesa-config_0.3.0-test.1_amd64.deb
 fmesa-config
 ```
 
@@ -75,7 +75,7 @@ bash run.sh
 - INI/HAL 预览、工程 JSON 保存与重新打开、命令行生成。
 - 可选的 SD 固件维护与只读通信监控；详见单独说明。
 
-QtDragon 模板目前只支持 XYZ/XYZA。伺服主轴的 StepGen 反馈是脉冲输出估计，本工具没有实现外部主轴编码器闭环、刚性攻丝或定向。软件不重新分配 FPGA 固件的物理功能；自定义引脚改变功能需要对应固件。
+QtDragon 模板目前只支持 XYZ/XYZA。未启用外部编码器时，伺服主轴的 StepGen 反馈是脉冲输出估计。外部编码器和速度闭环可选；同步加工需额外核对 Index 接线，不生成主轴定向。软件不重新分配 FPGA 固件的物理功能；自定义引脚改变功能需要对应固件。
 
 ## 命令行与测试
 
@@ -96,3 +96,13 @@ QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -p 'test_*.py' -
 ## 许可证
 
 桌面工具 GPL-2.0-or-later；本仓库和安装包不包含固件或固件源码。见 [LICENSE](LICENSE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。LinuxCNC/PNCconf 原版权和许可声明保留。
+
+## 0.3 高级机床配置（测试版）
+
+- 基本信息页：要求回零、恢复位置、单独回零、换刀时主轴运行/Z抬升/随机刀库、MDI命令、编辑器、图像与Python过滤器。默认仍要求回零，默认不恢复旧位置。
+- 轴页“反馈、补偿与双驱”：Step/Dir或PWM模拟伺服、独立编码器与索引回零、PID参数、反向间隙或补偿表、第二电机StepGen/比例/回零开关位置。补偿表在导出时复制到配置目录。
+- 双驱按X、Y、第二Y、Z等顺序编号关节；启用/关闭时保留已有输入输出所对应的电机，并更新关节编号；仍应按IO下拉中的关节号核对接线。两个电机必须各分配一个独立回零输入，生成负HOME_SEQUENCE同步回零和trivkins kinstype=BOTH。第二电机继承主电机的速度、时序和PID，脉冲当量与开关位置单独填写；当前第二电机使用Step/Dir。
+- 模拟伺服轴需要可用PWM和独立编码器、输出比例、明确的PID增益及最大输出；F7I92固定PWM0留给主轴，因此此项只适用于具备相应资源的自定义板卡。
+- 主轴页“编码器与PID”：编码器每转计数、速度闭环、PID及到速容差。编码器比例使用四倍频后的计数，不直接等于编码器铭牌线数。编码器不能与手轮/轴共用。关闭反馈时保留原开环模式；开启后speed-in/revs/index-enable来自真实编码器，Step/Dir闭环将RPM转换为rev/s。同步加工还需要实际Index接线及相应机床支持，生成连接不代表已完成同步攻丝验收。
+- 编码器索引回零必须有对应Index引脚和回零开关。补偿启用后，StepGen最大速度及加速度余量按PNCconf增至2倍。
+- 默认值及生成规则已对照本机LinuxCNC 2.9 PNCconf源码，并做离线组合测试；没有进行机床运动、闭环整定或实机启动验证。高级功能请按实际硬件填写和调试。Probe Basic仍使用官方模板的手动换刀配置，不生成ATC或主轴定向。

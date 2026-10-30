@@ -19,7 +19,7 @@ For Debian 12 amd64, download the `.deb` and run:
 
 ```bash
 sudo apt update
-sudo apt install ./fmesa-config_0.2.0-test.2_amd64.deb
+sudo apt install ./fmesa-config_0.3.0-test.1_amd64.deb
 fmesa-config
 ```
 
@@ -57,9 +57,10 @@ your actual circuit. An assigned external E-stop input controls the enable
 input. With no assigned external E-stop input, generation uses PNCconf's software
 E-stop loopback. This behavior has no separate mode selector.
 
-The tool does not start LinuxCNC or flash a board automatically. Step/Dir spindle
-feedback is estimated pulse output, not a measured motor encoder. Rigid tapping,
-spindle orientation and external spindle encoder feedback are not implemented.
+The tool does not start LinuxCNC or flash a board automatically. Without an external
+encoder, Step/Dir spindle feedback is estimated pulse output. External encoder
+feedback and speed PID are optional. Synchronized machining requires suitable
+index wiring and commissioning; spindle orientation is not generated.
 QtDragon templates currently support XYZ or XYZA.
 
 ```bash
@@ -77,3 +78,13 @@ Optional HAL monitoring uses LinuxCNC's **system** Python and `python3-tk`:
 Desktop code: GPL-2.0-or-later. Firmware and firmware source are not distributed. See LICENSE and THIRD_PARTY_NOTICES.md.
 
 Probe Basic requires its own installation and matching official machine template. See [PB setup](docs/PROBE_BASIC_EN.md); FMesa generates the manual-toolchange mill profile and copies its installed supporting assets.
+
+## 0.3 advanced machine settings (test release)
+
+- Basic information: require homing, restore joint position, individual homing, tool-change policies (spindle on, quill up, random pockets), MDI commands, editor, image/Python filters. Defaults still require homing and do not restore saved positions.
+- Axis feedback/compensation/tandem tab: Step/Dir or PWM analog servo, dedicated encoder and index homing, PID gains, backlash OR compensation table, and secondary motor StepGen/scale/switch offset. Compensation files are copied into exported configurations.
+- Tandem joints are numbered in coordinate order, such as X,Y,second Y,Z. Existing IO assignments retain their motor identity when tandem numbering changes; recheck all joint-number assignments. Each motor requires a separate home input. Negative HOME_SEQUENCE values synchronize homing; trivkins uses kinstype=BOTH. The secondary Step/Dir motor inherits velocity, timing and PID from the primary; its step scale and switch offset are independent.
+- PWM servo axes require an available PWM channel, dedicated encoder, output scale, explicit PID gains and maximum output. F7I92 reserves its fixed PWM0 for the spindle; analog axes therefore require a suitable custom board.
+- Spindle encoder/PID tab: counts per revolution, closed-loop speed control, PID and at-speed tolerance. Use quadrature counts, not the encoder nameplate line count. No encoder may be shared with MPG/axes. Feedback disabled preserves open-loop behavior. With feedback enabled, actual encoder velocity/position/index connect to speed-in/revs/index-enable; Step/Dir PID output is converted from RPM to rev/s. Synchronized machining additionally requires physical index wiring and suitable hardware; generated connections are not tapping acceptance tests.
+- Index homing requires an index pin and a home switch. Backlash/compensation increases StepGen velocity and acceleration headroom to 2x, following PNCconf.
+- Defaults/generation were compared against installed LinuxCNC 2.9 PNCconf source and tested offline. No machine motion, loop tuning or live startup was performed. Advanced settings require hardware-specific commissioning. Probe Basic remains an official-template manual-toolchange profile; ATC and spindle orientation are not generated.

@@ -15,6 +15,8 @@ from board_profiles import PROFILES,profile_for,effective_gpio,default_discovery
 from board_models import identify_hal_pin
 import discovery
 import spindle_config
+import advanced_config
+from advanced_widgets import OptionForm,MACHINE_LABELS,JOINT_LABELS
 from io_widgets import SignalCombo
 from io_config import gpio_reason
 from i18n import translate, translate_widgets
@@ -152,6 +154,8 @@ class Window(QMainWindow):
         self.control_mode.hide()
         form.addRow('轴驱动方式',QLabel('Step/Dir（脉冲＋方向，位置控制）'))
         l.addWidget(QLabel('新工程的脉冲当量默认为0，必须按实际机械填写后才能导出。'))
+        self.machine_options=OptionForm(advanced_config.MACHINE_DEFAULTS,MACHINE_LABELS)
+        l.addWidget(self.machine_options)
         l.addStretch()
 
     def screen_page(self):
@@ -221,9 +225,9 @@ class Window(QMainWindow):
 
     def axes_page(self):
         l=self.page('02  轴参数','硬件Step/Dir独立轴，按位置指令控制。线性单位mm，旋转轴degree。脉冲当量必须按实际机械填写，可用负值反向。')
-        row=QHBoxLayout();self.layout_choice=QComboBox();self.layout_choice.addItems(['XYZ','XYZA','XYZAB']);row.addWidget(QLabel('轴结构'));row.addWidget(self.layout_choice)
+        row=QHBoxLayout();self.layout_choice=QComboBox();self.layout_choice.addItems(['XYZ','XYZA','XYZAB','XZ']);row.addWidget(QLabel('轴结构'));row.addWidget(self.layout_choice)
         row.addWidget(button('应用轴结构',self.apply_axes));row.addStretch();l.addLayout(row)
-        self.axis_keys=['axis','stepgen','scale','velocity','acceleration','minimum','maximum','home','home_offset','home_final_velocity','search','latch','home_sequence','ferror','min_ferror','steplen','stepspace','dirsetup','dirhold']
+        self.axis_keys=['axis','stepgen','scale','velocity','acceleration','minimum','maximum','home','home_offset','home_final_velocity','search','latch','home_sequence','ferror','min_ferror','steplen','stepspace','dirsetup','dirhold','advanced']
         self.axis_table=QTableWidget(0,len(self.axis_keys));self.axis_table.setHorizontalHeaderLabels(self.axis_keys)
         self.axis_table.hide()
         self.axis_tabs=QTabWidget();l.addWidget(self.axis_tabs,1)
@@ -239,7 +243,10 @@ class Window(QMainWindow):
         form.addRow('主轴类型',self.spindle_type)
         self.sp['rpm']=number(0,False,0,1000000);form.addRow('最高/满量程转速 / rpm',self.sp['rpm'])
         self.sp['frequency']=number(0,True,0,1000000);form.addRow('PWM频率 / Hz',self.sp['frequency'])
-        self.spindle_pages=QStackedWidget();l.addWidget(self.spindle_pages)
+        self.spindle_settings=QTabWidget();l.addWidget(self.spindle_settings,1)
+        control_page=QWidget();control_layout=QVBoxLayout(control_page)
+        self.spindle_pages=QStackedWidget();control_layout.addWidget(self.spindle_pages);control_layout.addStretch()
+        self.spindle_settings.addTab(control_page,'控制信号 / Control signals')
         analog=QWidget();analog_layout=QVBoxLayout(analog);analog_form=QFormLayout();analog_layout.addLayout(analog_form)
         self.sp['channel']=number(0,True,0,15);analog_form.addRow('PWM通道',self.sp['channel'])
         self.pwm_invert=QCheckBox('PWM输出反向（按实际电路）');analog_form.addRow(self.pwm_invert)
@@ -252,8 +259,12 @@ class Window(QMainWindow):
         for key,value in spindle_config.SERVO_DEFAULTS.items():
             integer=key not in ('pulses_per_rev','acceleration')
             editor=number(value,integer);self.servo_fields[key]=editor;servo_form.addRow(labels[key],editor)
-        hint=QLabel('伺服驱动器接收脉冲＋方向。最高转速在上方以rpm填写，HAL使用转/秒；每转脉冲数需包含电子齿轮及机械传动比。\nStepGen速度仅为脉冲输出估计，不是电机实测转速；本页不生成外部编码器测速或同步攻丝配置。')
+        hint=QLabel('伺服驱动器接收脉冲＋方向。最高转速在上方以rpm填写，HAL使用转/秒；每转脉冲数需包含电子齿轮及机械传动比。\n未启用外部编码器时，StepGen速度仅为脉冲输出估计；实测反馈和速度PID在下方配置。')
         hint.setWordWrap(True);servo_layout.addWidget(hint);self.spindle_pages.addWidget(servo)
+        self.spindle_feedback=OptionForm(spindle_config.FEEDBACK_DEFAULTS,dict(encoder='编码器通道（-1关闭） / Encoder (-1 off)',encoder_scale='主轴每转编码器计数 / Encoder counts per revolution',closed_loop='主轴速度闭环 / Spindle speed PID',p='P',i='I',d='D',ff0='FF0',ff1='FF1',ff2='FF2',bias='BIAS',deadband='DEADBAND',at_speed_scale='到速比例 / At-speed ratio',at_speed_rpm='到速容差rpm / At-speed tolerance RPM'))
+        feedback_group=QGroupBox('主轴编码器与PID / Spindle encoder and PID');QVBoxLayout(feedback_group).addWidget(self.spindle_feedback)
+        from PySide6.QtWidgets import QScrollArea
+        feedback_scroll=QScrollArea();feedback_scroll.setWidgetResizable(True);feedback_scroll.setWidget(feedback_group);self.spindle_settings.addTab(feedback_scroll,'编码器与PID / Encoder and PID')
         self.spindle_type.currentIndexChanged.connect(self.update_spindle_page)
         self.sp['enabled'].toggled.connect(self.update_spindle_page)
         self.profile_outputs=QGroupBox('板卡固定主轴输出');self.profile_output_form=QFormLayout(self.profile_outputs)
@@ -425,7 +436,7 @@ class Window(QMainWindow):
                 table.setCellWidget(row,3,direction);table.setCellWidget(row,4,roles);table.setCellWidget(row,5,invert)
                 def fill_roles(_=None,direction=direction,roles=roles,value=v.get('role','')):
                     previous=roles.currentData() if roles.count() else value
-                    roles.set_roles(input_roles(len(c['axes'])) if direction.currentData()=='in' else output_roles(len(c['axes'])),previous)
+                    roles.set_roles(input_roles(len(advanced_config.joints(c))) if direction.currentData()=='in' else output_roles(len(advanced_config.joints(c))),previous)
                     roles.setEnabled(bool(direction.currentData()))
                 fill_roles();direction.currentIndexChanged.connect(fill_roles)
                 direction.setEnabled(not reason or bool(v));roles.setEnabled(bool(direction.currentData()))
@@ -451,7 +462,7 @@ class Window(QMainWindow):
         for index in sorted(spindle):
             rule=profile.fixed_gpio[index]
             saved=chosen.get(index,next((v for v in c.get('mesa_gpio',[]) if v['io']==index),dict(role=rule.get('default_role',''),invert=rule.get('invert',False))))
-            combo=SignalCombo();combo.set_roles(output_roles(len(c['axes'])),saved['role'])
+            combo=SignalCombo();combo.set_roles(output_roles(len(advanced_config.joints(c))),saved['role'])
             label=f'IO{index} 固定输出'+(' / 固定反相' if rule.get('invert') and rule.get('lock_invert') else '')
             field=QWidget();row=QHBoxLayout(field);row.setContentsMargins(0,0,0,0);row.addWidget(combo,1)
             invert=QCheckBox('反相');invert.setChecked(saved.get('invert',False));invert.setEnabled(not rule.get('lock_invert',False));row.addWidget(invert)
@@ -488,7 +499,7 @@ class Window(QMainWindow):
         text+=f'\nsetp {host}.gpio.029.is_output FALSE\n'
         if role:
             pin=f'{host}.gpio.029.'+('in_not' if self.mpg_input29_invert.isChecked() else 'in')
-            count=self.axis_table.rowCount()
+            count=len(advanced_config.joints(self.collect()))
             if role not in input_roles(count):text+='# IO29功能与当前轴结构不匹配，请重新选择\n'
             else:
                 targets=input_targets(role,count)
@@ -531,6 +542,7 @@ class Window(QMainWindow):
             if isinstance(w,QComboBox):w.setCurrentText(str(self.c[k]))
             elif isinstance(w,QSpinBox):w.setValue(self.c[k])
             else:w.setText(str(self.c[k]))
+        self.machine_options.set_values(self.c.get('machine_options',{}))
         self.pb_template.setText(self.c.get('probe_basic_template',''))
         self.update_display_options()
         self.pdm_frequency.setValue(self.c.get('pdm_frequency',6000000))
@@ -544,17 +556,18 @@ class Window(QMainWindow):
         self.fill_axes()
         self.spindle_type.blockSignals(True);self.spindle_type.setCurrentIndex(self.spindle_type.findData(self.c['spindle'].get('type','analog')));self.spindle_type.blockSignals(False)
         for key,editor in self.servo_fields.items():editor.setValue(self.c['spindle'].get(key,spindle_config.SERVO_DEFAULTS[key]))
+        self.spindle_feedback.set_values(self.c['spindle'])
         self.pwm_invert.setChecked(self.c['spindle'].get('invert_pwm',False))
         self.sp['enabled'].setChecked(self.c['spindle']['enabled'])
         for k in ('channel','rpm','frequency'):self.sp[k].setValue(self.c['spindle'][k])
         self.update_spindle_page()
         for i in range(16):
-            self.io.cellWidget(i,1).set_roles(input_roles(len(self.c['axes'])),self.c['inputs'][i]['role'])
-            self.io.cellWidget(i,4).set_roles(output_roles(len(self.c['axes'])),self.c['outputs'][i])
+            self.io.cellWidget(i,1).set_roles(input_roles(len(advanced_config.joints(self.c))),self.c['inputs'][i]['role'])
+            self.io.cellWidget(i,4).set_roles(output_roles(len(advanced_config.joints(self.c))),self.c['outputs'][i])
             self.io.cellWidget(i,2).setChecked(self.c['inputs'][i]['invert'])
         self.mpg_axes.setCurrentIndex(self.mpg_axes.findData(self.c['mpg'].get('axes',3)))
         input29=self.c['mpg'].get('input29',{})
-        self.mpg_input29.set_roles(input_roles(len(self.c['axes'])),input29.get('role',''))
+        self.mpg_input29.set_roles(input_roles(len(advanced_config.joints(self.c))),input29.get('role',''))
         self.mpg_input29_invert.setChecked(input29.get('invert',False))
         self.update_mpg_preview()
         self.discovery_text.setPlainText((self.c.get('discovery') or {}).get('raw','尚未读取板卡；可离线编辑。'))
@@ -565,7 +578,8 @@ class Window(QMainWindow):
 
     def fill_axes(self):
         self.axis_table.setRowCount(len(self.c['axes']))
-        if hasattr(self,'mpg_input29'):self.mpg_input29.set_roles(input_roles(len(self.c['axes'])),self.mpg_input29.currentData() or '')
+        if hasattr(self,'mpg_input29'):self.mpg_input29.set_roles(input_roles(len(advanced_config.joints(self.c))),self.mpg_input29.currentData() or '')
+        self.axis_titles=[]
         while self.axis_tabs.count():
             widget=self.axis_tabs.widget(0);self.axis_tabs.removeTab(0);widget.deleteLater()
         labels=dict(zip(self.axis_keys,['轴','StepGen通道','脉冲当量 / 单位（必须填写）','最大速度 / 分钟','最大加速度 / 秒²','负向行程','正向行程','最终回零位置 HOME','开关位置 HOME_OFFSET','最终回零速度 / 分钟（0使用最大速度）','搜索速度 / 分钟（有符号）','锁存速度 / 分钟（有符号）','回零顺序','FERROR','MIN_FERROR','脉冲宽度 / ns','脉冲间隔 / ns','方向建立 / ns','方向保持 / ns']))
@@ -573,12 +587,15 @@ class Window(QMainWindow):
         integers={'stepgen','home_sequence','steplen','stepspace','dirsetup','dirhold'}
         for i,a in enumerate(self.c['axes']):
             for j,key in enumerate(self.axis_keys):
+                if key=='advanced':
+                    self.axis_table.setItem(i,j,QTableWidgetItem(json.dumps(a.get('advanced',{}))));continue
                 item=QTableWidgetItem(str(a.get(key, a['home'] if key=='home_offset' else 0. if key=='home_final_velocity' else 1. if key=='ferror' else .25)));self.axis_table.setItem(i,j,item)
                 if key=='axis':item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             axis_page=QWidget();layout=QVBoxLayout(axis_page)
-            title=QLabel(f'{a["axis"]} 轴 / 关节 {i}');title.setObjectName('heading');layout.addWidget(title)
+            joint_index=sum(2 if prior.get('advanced',{}).get('tandem_enabled') else 1 for prior in self.c['axes'][:i])
+            title=QLabel(f'{a["axis"]} 轴 / 关节 {joint_index}');title.setObjectName('heading');layout.addWidget(title);self.axis_titles.append(title)
             settings=QTabWidget();settings.setObjectName('axis_settings');layout.addWidget(settings)
-            for title,keys in [('电机与驱动器',motor_keys),('行程与回零',[k for k in self.axis_keys if k not in motor_keys and k!='axis'])]:
+            for title,keys in [('电机与驱动器',motor_keys),('行程与回零',[k for k in self.axis_keys if k not in motor_keys and k not in ('axis','advanced')])]:
                 page=QWidget();form=QFormLayout(page)
                 for key in keys:
                     factor=60 if key in ('velocity','search','latch','home_final_velocity') else 1
@@ -592,8 +609,33 @@ class Window(QMainWindow):
                     if factor==60:label += ' (degree)' if a['axis'] not in 'XYZ' else ' (mm)'
                     form.addRow(label,editor)
                 settings.addTab(page,title)
+            advanced=OptionForm(advanced_config.JOINT_DEFAULTS,JOINT_LABELS,{'drive':[('Step/Dir','stepdir'),('模拟伺服 PWM＋编码器 / PWM + encoder','pwm')]})
+            advanced.set_values(a.get('advanced',{}))
+            advanced.changed.connect(lambda row=i,form=advanced:self.axis_advanced_changed(row,form))
+            from PySide6.QtWidgets import QScrollArea
+            scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(advanced);settings.addTab(scroll,'反馈、补偿与双驱 / Feedback, compensation, tandem')
             layout.addStretch()
             self.axis_tabs.addTab(axis_page,a['axis'])
+
+    def axis_advanced_changed(self,row,form):
+        before=self.collect()
+        self.axis_table.item(row,self.axis_keys.index('advanced')).setText(json.dumps(form.values()))
+        c=self.collect();count=len(advanced_config.joints(c))
+        joint_index=0
+        for axis,label in zip(c['axes'],self.axis_titles):
+            tandem=axis.get('advanced',{}).get('tandem_enabled',False)
+            label.setText(f"{axis['axis']} 轴 / 关节 {joint_index}"+(f' + {joint_index+1}' if tandem else ''))
+            joint_index+=2 if tandem else 1
+        remap=lambda role:advanced_config.remap_joint_role(role or '',before,c)
+        for i in range(16):
+            self.io.cellWidget(i,1).set_roles(input_roles(count),remap(self.io.cellWidget(i,1).currentData()))
+            self.io.cellWidget(i,4).set_roles(output_roles(count),remap(self.io.cellWidget(i,4).currentData()))
+        self.mpg_input29.set_roles(input_roles(count),remap(self.mpg_input29.currentData()))
+        for table in (self.mesa_io,self.custom_io):
+            for i in range(table.rowCount()):
+                combo=table.cellWidget(i,4)
+                if combo:combo.set_roles(input_roles(count) if table.cellWidget(i,3).currentData()=='in' else output_roles(count),remap(combo.currentData()))
+        for combo in self.profile_output_widgets.values():combo.set_roles(output_roles(count),remap(combo.currentData()))
 
     def collect(self):
         c=json.loads(json.dumps(self.c))
@@ -605,13 +647,15 @@ class Window(QMainWindow):
             a={}
             for j,k in enumerate(self.axis_keys):
                 text=self.axis_table.item(i,j).text().strip()
-                a[k]=text if k=='axis' else int(text) if k in ints else float(text)
+                a[k]=json.loads(text) if k=='advanced' else text if k=='axis' else int(text) if k in ints else float(text)
             axes.append(a)
+        c['machine_options']=self.machine_options.values()
         c['axes']=axes;c['spindle']={'enabled':self.sp['enabled'].isChecked(),'type':self.spindle_type.currentData(),**{k:self.sp[k].value() for k in ('channel','rpm','frequency')},**{key:editor.value() for key,editor in self.servo_fields.items()}}
         c['inputs']=[dict(role=self.io.cellWidget(i,1).currentData(),invert=self.io.cellWidget(i,2).isChecked()) for i in range(16)]
         c['outputs']=[self.io.cellWidget(i,4).currentData() for i in range(16)]
         c['board_profile']=self.board_choice.currentData()
         c.pop('estop_mode',None) # Ignore the removed temporary UI option in old drafts.
+        c['spindle'].update(self.spindle_feedback.values())
         c['spindle']['invert_pwm']=self.pwm_invert.isChecked()
         c['dpll_timer_us']=self.dpll_timer.value()
         c['pdm_frequency']=self.pdm_frequency.value()
@@ -628,8 +672,8 @@ class Window(QMainWindow):
             self.c=self.collect();existing={a['axis']:a for a in self.c['axes']}
             self.c['axes']=[existing.get(a,axis_defaults(a,i)) for i,a in enumerate(self.layout_choice.currentText())];self.fill_axes()
             for i in range(16):
-                self.io.cellWidget(i,1).set_roles(input_roles(len(self.c['axes'])),self.c['inputs'][i]['role'])
-                self.io.cellWidget(i,4).set_roles(output_roles(len(self.c['axes'])),self.c['outputs'][i])
+                self.io.cellWidget(i,1).set_roles(input_roles(len(advanced_config.joints(self.c))),self.c['inputs'][i]['role'])
+                self.io.cellWidget(i,4).set_roles(output_roles(len(advanced_config.joints(self.c))),self.c['outputs'][i])
             self.refresh_gpio()
         except Exception as exc:self.error(str(exc))
 

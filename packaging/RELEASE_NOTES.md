@@ -1,23 +1,23 @@
-## FMesa 配置工具 · 测试版
+## FMesa 配置工具 0.3.0-test.1
 
-- 提供 Debian 12 amd64 安装包、免安装运行包、配置工具源码和 SHA256 校验清单。
-- 包含 Probe Basic (QtPyVCP) 界面配置：使用目标电脑配套的官方模板，当前支持铣床手动换刀，不启用 ATC。
-- PWM0 新工程默认反向、200Hz；没有外部急停输入时按 PNCconf 生成软件急停回路。
-- **不包含任何固件 BIN、FWUP、固件源码 ZIP 或固件 manifest。**升级包由使用者另行提供。
-- 修正早期测试版的 GitHub 资产文件名与校验清单不一致问题。
+- 补齐公制启动代码、点动步距、车床标志、TRAJ速度、HAL扩展入口和Gmoccapy指示连接。
+- 新增反向间隙/补偿表、编码器索引回零、Step/Dir双驱、PWM模拟伺服轴与PID。
+- 新增主轴实测编码器、速度PID、到速判断和Step/Dir转速单位转换。
+- 新增回零、位置恢复、换刀、MDI、编辑器与过滤器选项；保留原默认行为。
+- 中英文使用说明已更新。提供Debian12 amd64安装包、免安装包、源码、SHA256SUMS。
+- 不包含固件。Probe Basic保留手动换刀；不生成ATC和主轴定向。
 
-[中文安装与使用](https://github.com/84864797/FMesa-Config/blob/main/README.md) · [Probe Basic说明](https://github.com/84864797/FMesa-Config/blob/main/docs/PROBE_BASIC.md)
+已完成软件组合测试及离线自检，未启动LinuxCNC或进行机床运动、伺服整定与实机验收。高级功能需按硬件接线和机械参数调试。
 
-已通过软件测试和离线自检；没有代用户启动机床或完成 Probe Basic 实机验收。安装包适用 Debian 12 amd64，不代表所有系统或固件已通过硬件验证。
+## FMesa Config 0.3.0-test.1
 
-## FMesa Config · Test release
+- Completes metric startup code, jog increments, lathe flag, trajectory speeds, custom HAL hooks and Gmoccapy indicators.
+- Adds backlash/compensation tables, encoder-index homing, Step/Dir tandem joints and PWM servo axes with PID.
+- Adds measured spindle encoder feedback, speed PID, at-speed checks and RPM-to-rev/s conversion for Step/Dir.
+- Adds homing, position restore, tool-change, MDI, editor and filter settings while retaining existing defaults.
+- Updated Chinese/English instructions. Includes Debian12 amd64 installer, portable runtime, source and SHA256SUMS.
+- No firmware included. Probe Basic uses manual toolchange; ATC and spindle orientation are not generated.
 
-- Includes a Debian 12 amd64 installer, portable runtime, configuration-tool source and SHA256SUMS.
-- Probe Basic (QtPyVCP) mill/manual-toolchange profile uses the target's matching official template. ATC is not enabled.
-- New PWM0 projects default to inverted output at 200Hz. With no external E-stop input assigned, generation uses PNCconf's software E-stop loopback.
-- **No firmware BIN, FWUP, firmware source ZIP or firmware manifest is distributed.** Upgrade packages must be supplied separately.
-- Corrects the earlier preview's GitHub asset filename/checksum-list mismatch.
+Software combination tests and offline self-tests were performed. LinuxCNC/machine motion, servo tuning and hardware acceptance were not run. Commission advanced settings for the actual wiring and mechanics.
 
-[English installation and usage](https://github.com/84864797/FMesa-Config/blob/main/README_EN.md) · [Probe Basic guide](https://github.com/84864797/FMesa-Config/blob/main/docs/PROBE_BASIC_EN.md)
-
-Software tests and offline self-tests passed. No machine was started and no Probe Basic hardware acceptance was performed. This installer targets Debian 12 amd64; other systems and firmware combinations require their own verification.
+[中文说明](https://github.com/84864797/FMesa-Config/blob/main/README.md) · [English](https://github.com/84864797/FMesa-Config/blob/main/README_EN.md)

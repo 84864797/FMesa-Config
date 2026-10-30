@@ -14,6 +14,21 @@ class UITest(unittest.TestCase):
     def setUp(self):self.w=Window()
     def tearDown(self):self.w.close()
 
+    def test_advanced_forms_roundtrip_and_tandem_roles(self):
+        from advanced_widgets import OptionForm
+        self.w.io.cellWidget(0,1).setCurrentIndex(self.w.io.cellWidget(0,1).findData('home:2'))
+        forms=self.w.axis_tabs.widget(1).findChildren(OptionForm)
+        self.assertEqual(len(forms),1)
+        form=forms[0];form.editors['tandem_enabled'].setChecked(True)
+        form.editors['tandem_stepgen'].setValue(3)
+        form.editors['tandem_scale'].setValue(-400)
+        self.w.machine_options.editors['restore_position'].setChecked(True)
+        self.w.spindle_feedback.editors['encoder'].setValue(1)
+        c=self.w.collect();self.assertTrue(c['axes'][1]['advanced']['tandem_enabled'])
+        self.assertTrue(c['machine_options']['restore_position'])
+        self.assertEqual(self.w.io.cellWidget(0,1).currentData(),'home:3')
+        self.w.c=c;self.w.populate();self.assertEqual(self.w.collect(),c)
+
     def test_default_form_roundtrip(self):self.assertEqual(self.w.collect(),defaults())
 
     def test_probe_basic_option_and_template_path_roundtrip(self):
@@ -236,7 +251,9 @@ class UITest(unittest.TestCase):
         self.w.layout_choice.setCurrentText('XYZA');self.w.apply_axes();
         for row in range(self.w.axis_table.rowCount()):self.w.axis_table.item(row,self.w.axis_keys.index('scale')).setText('400')
         self.assertEqual(self.w.axis_table.rowCount(),4)
-        self.assertFalse(validate(self.w.collect())[0]);self.w.preview();self.assertEqual(self.w.tabs.count(),5)
+        self.assertFalse(validate(self.w.collect())[0]);self.w.preview()
+        previews={self.w.tabs.tabText(i) for i in range(self.w.tabs.count())}
+        self.assertTrue({'machine.hal','custom.hal','custom_postgui.hal','shutdown.hal'} <= previews)
 
     def test_actual_hal_prefix_and_channel(self):
         self.w.hal_read('36 bit OUT FALSE hm2_7i92.0.SD02.0.2.input-00')
